@@ -8,6 +8,8 @@ extends Node2D
 
 func _on_correr_pressed() -> void:
 	var matriz_distancias = ciudad.grafo
+	if container.ids_incluidos.is_empty():
+		push_error("No hay pedidos selecionados")
 	optimizar_ruta(container.ids_incluidos, matriz_distancias)
 
 var mejor_distancia = INF
