@@ -1,20 +1,19 @@
-# ============================================================================
 # GESTOR DE CIUDAD Y GRAFO (CIUDAD.GD)
-# ============================================================================
+
 # Construye la matriz de distancias (grafo) desde todos los nodos de conexiones
 # Almacena las posiciones de los nodos para calcular rutas de viaje
-# ============================================================================
+
 
 extends Node2D
 
-# --- REFERENCIAS: Nodos hijo que contienen los puntos de la ciudad ---
+#  REFERENCIAS A OTROS NODOS
 @onready var nodos: Node2D = $Nodos
 
-# --- ESTRUCTURA DE DATOS DEL GRAFO ---
+#  Estructura de datos del grafo
 var grafo = []        # Matriz de adyacencia: [nodo][distancia_a_otro_nodo]
 var nodos_pos=[]      # Posiciones locales de cada nodo en la escena
 
-# --- INICIALIZACIÓN: Construye el grafo y almacena posiciones ---
+# Construye el grafo y almacena posiciones 
 # Se ejecuta cuando la escena está lista
 func _ready() -> void:
 	# Limpiar datos previos
@@ -27,12 +26,10 @@ func _ready() -> void:
 		grafo.append(nodo.distancias)
 		# Almacenar la posición local del nodo
 		nodos_pos.append(nodo.position)
-		# Debug: Mostrar las distancias en consola
+		# Debug
 		print(nodo.distancias)
 
-# --- MÉTODO: Convierte coordenada local a global usando el índice del nodo ---
-# Parámetros: index - índice del nodo (0-8)
-# Retorna: Vector2 con la posición global del nodo en la pantalla
+#  Convierte coordenada local a global usando el índice del nodo (para luego calcular el movimiento del camión)
 func get_node_global_pos(index:int)-> Vector2:
 	# Validar que el índice esté dentro del rango de nodos
 	if index< nodos_pos.size():

@@ -1,21 +1,20 @@
-# ============================================================================
 # CONTROLADOR PRINCIPAL (MAIN.GD)
-# ============================================================================
+
 # Orquesta el flujo principal del programa:
 # 1. Recibe la lista de pedidos del contenedor
 # 2. Genera la ruta óptima usando algoritmo de optimización
 # 3. Convierte nodos a coordenadas
 # 4. Envía la ruta al camión para que la viaje
-# ============================================================================
+
 
 extends Node2D
 
-# --- REFERENCIAS A OTROS NODOS: Acceso a componentes principales ---
-@onready var container: Container = $Control/Container        # Gestor de pedidos
-@onready var ciudad: Node2D = %Ciudad                         # Gestor de grafo y ciudad
+#  REFERENCIAS A OTROS NODOS
+@onready var container: Container = $Control/Container		  # Gestor de pedidos
+@onready var ciudad: Node2D = %Ciudad						  # Gestor de grafo y ciudad
 @onready var camion: Node2D = %Camion                         # Camión que viajará
 
-# --- PASO 1: BOTÓN "CORRER RUTA" PRESIONADO ---
+
 # Se ejecuta cuando el usuario presiona el botón para iniciar el viaje
 func _on_correr_pressed() -> void:
 	# Obtener la matriz de distancias desde la ciudad
@@ -26,47 +25,21 @@ func _on_correr_pressed() -> void:
 	# Optimizar la ruta con los pedidos seleccionados
 	optimizar_ruta(container.ids_incluidos, matriz_distancias)
 
-# --- VARIABLES GLOBALES: Almacenan la mejor solución encontrada ---
+#  Variables globales
 var mejor_distancia = INF   # Distancia total de la mejor ruta
 var mejor_ruta = []         # Secuencia de nodos de la mejor ruta
 
-# --- PASO 5: ALGORITMO DE RUTA MÍNIMA ENTRE NODOS OBLIGATORIOS ---
+# Algoritmo de optimización de ruta:
 # Calcula primero las distancias más cortas entre todos los nodos
 # Luego optimiza el orden de los pedidos usando sólo los nodos obligatorios
-# Esto evita rutas circulares inútiles y permite usar nodos intermedios correctamente
-# Parámetros:
-#  - ids_pedidos: lista de nodos obligatorios que deben visitarse
-#  - matriz_distancias: grafo con todas las distancias
-func optimizar_ruta(ids_pedidos, matriz_distancias):
-	# Validar entrada
-	if ids_pedidos.is_empty():
-		push_error("ids_pedidos está vacío")
-		return
+func optimizar_ruta(ids_pedidos, matriz_distancias): #  ids_pedidos: lista de nodos obligatorios
 	
-	# --- VALIDACIÓN: Comprobar que existen conexiones válidas para todos los nodos ---
-	var conexiones_invalidas = []
-	for nodo in ids_pedidos:
-		if nodo >= matriz_distancias.size():
-			conexiones_invalidas.append(nodo)
-		elif matriz_distancias[nodo].size() == 0:
-			conexiones_invalidas.append(nodo)
-	
-	if not conexiones_invalidas.is_empty():
-		push_error("Nodos sin datos de distancia: ", conexiones_invalidas)
-		return
-	
-	# --- PASO 2.1: Calcular todas las distancias más cortas con Floyd-Warshall ---
+	# Calcular distancias más cortas con Floyd-Warshall 
 	var floyd_result = floyd_warshall(matriz_distancias)
 	var dist = floyd_result["dist"]
 	var next = floyd_result["next"]
-
-	# Verificar que todos los pedidos son alcanzables desde el nodo 0
-	for nodo in ids_pedidos:
-		if dist[0][nodo] == INF:
-			push_error("No es posible alcanzar el nodo pedido desde el inicio: ", nodo)
-			return
 	
-	# --- PASO 2.2: Resolver TSP entre nodos obligatorios usando las distancias mínimas ---
+	# TSP de los nodos obligatorios 
 	mejor_distancia = INF
 	mejor_ruta = []
 	backtracking_tsp(0, ids_pedidos, {0:true}, [0], 0, dist)
@@ -79,7 +52,7 @@ func optimizar_ruta(ids_pedidos, matriz_distancias):
 	# Reconstruir la ruta completa usando los caminos más cortos entre los nodos obligatorios
 	var ruta_completa = [0]
 	for i in range(mejor_ruta.size() - 1):
-		var subruta = reconstruct_path(mejor_ruta[i], mejor_ruta[i+1], next)
+		var subruta = recontruir_camino(mejor_ruta[i], mejor_ruta[i+1], next)
 		for j in range(1, subruta.size()):
 			ruta_completa.append(subruta[j])
 	
@@ -89,7 +62,7 @@ func optimizar_ruta(ids_pedidos, matriz_distancias):
 	print("Ruta encontrada: ", mejor_ruta)
 	print("Distancia total: ", mejor_distancia)
 	
-	# --- PASO 3: CONVERTIR NODOS A COORDENADAS ---
+	# pasar la ruta al camion
 	var ruta_coordenadas = []
 	for id_nodo in mejor_ruta:
 		var pos_global = ciudad.get_node_global_pos(id_nodo)
@@ -100,7 +73,7 @@ func optimizar_ruta(ids_pedidos, matriz_distancias):
 	else:
 		push_error("Camion no tiene funcion 'viajar'")
 
-# --- AUXILIAR: Floyd-Warshall para distancias mínimas y siguiente nodo ---
+# Para distancias mínimas y siguiente nodo
 func floyd_warshall(matriz_distancias):
 	var n = matriz_distancias.size()
 	var dist = []
@@ -129,8 +102,8 @@ func floyd_warshall(matriz_distancias):
 		
 	return {"dist": dist, "next": next}
 
-# --- AUXILIAR: Reconstruye el camino más corto entre dos nodos ---
-func reconstruct_path(start, goal, next):
+# Construye el camino más corto entre dos nodos 
+func recontruir_camino(start, goal, next):
 	var path = []
 	if next[start][goal] == -1:
 		return path
@@ -142,7 +115,7 @@ func reconstruct_path(start, goal, next):
 	
 	return path
 
-# --- AUXILIAR: Backtracking sobre nodos obligatorios usando distancias mínimas ---
+# Backtracking sobre nodos obligatorios usando distancias mínimas 
 func backtracking_tsp(nodo_actual, ids_pedidos, visitados, ruta_actual, distancia_acumulada, dist):
 	if distancia_acumulada >= mejor_distancia:
 		return
