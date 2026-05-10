@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://bj2tmp5vov1ia"]
+
+[node name="pedidos" type="HBoxContainer" unique_id=1581246613]
+custom_minimum_size = Vector2(576, 0)
+offset_right = 576.0
+offset_bottom = 31.0
+
+[node name="ID" type="Label" parent="." unique_id=1531380417]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Weight" type="SpinBox" parent="." unique_id=2082729149]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Price" type="SpinBox" parent="." unique_id=1362828218]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Tipo" type="OptionButton" parent="." unique_id=1507996807]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Nodo" type="OptionButton" parent="." unique_id=107836337]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DeleteButton" type="Button" parent="." unique_id=555621181]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "BORRAR"

@@ -1,0 +1,25 @@
+extends Node2D
+
+
+@export var dist_0 = INF
+@export var dist_1 = INF
+@export var dist_2 = INF
+@export var dist_3 = INF
+@export var dist_4 = INF
+@export var dist_5 = INF
+@export var dist_6 = INF
+@export var dist_7 = INF
+@export var dist_8 = INF
+
+
+var distancias =[]
+func _ready() -> void:
+	distancias.append(dist_0)
+	distancias.append(dist_1)
+	distancias.append(dist_2)
+	distancias.append(dist_3)
+	distancias.append(dist_4)
+	distancias.append(dist_5)
+	distancias.append(dist_6)
+	distancias.append(dist_7)
+	distancias.append(dist_8)

@@ -1,0 +1,152 @@
+[gd_scene format=3 uid="uid://clqokuq8v4b4x"]
+
+[ext_resource type="Script" uid="uid://cn41jwjvr6v23" path="res://Scripts/main.gd" id="1_jjvhh"]
+[ext_resource type="Script" uid="uid://41rle0phxkbc" path="res://Scripts/container.gd" id="2_kry3j"]
+[ext_resource type="Script" uid="uid://d3n7ydyi32r3o" path="res://Scripts/camion.gd" id="3_21xkr"]
+[ext_resource type="PackedScene" uid="uid://chy0nahkdbsf3" path="res://Scenes/Ciudad.tscn" id="3_jjvhh"]
+[ext_resource type="Texture2D" uid="uid://cjntyuk1hp5ky" path="res://truck.png" id="4_kry3j"]
+
+[node name="main" type="Node2D" unique_id=1423909146]
+script = ExtResource("1_jjvhh")
+metadata/_edit_vertical_guides_ = [1152.0, 577.0, 626.0]
+metadata/_edit_horizontal_guides_ = [648.0]
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1750634197]
+offset_left = -507.0
+offset_right = 1733.0
+offset_bottom = 1149.0
+color = Color(0.50017565, 0.6016369, 0.3837311, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="ColorRect" unique_id=126177153]
+layout_mode = 0
+offset_left = 1116.0
+offset_top = 647.0
+offset_right = 1166.0
+offset_bottom = 1202.6984
+rotation = -1.5707964
+color = Color(0.53024435, 0.5330247, 0.54063016, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="ColorRect" unique_id=261347489]
+layout_mode = 0
+offset_left = 1111.3016
+offset_top = 49.999973
+offset_right = 1161.3016
+offset_bottom = 605.69836
+rotation = -1.5707964
+color = Color(0.53024435, 0.5330247, 0.54063016, 1)
+
+[node name="ColorRect4" type="ColorRect" parent="ColorRect" unique_id=1506272035]
+layout_mode = 0
+offset_left = 1610.0
+offset_top = 1.0
+offset_right = 1660.0
+offset_bottom = 1153.0
+color = Color(0.53024435, 0.5330247, 0.54063016, 1)
+
+[node name="ColorRect" type="ColorRect" parent="ColorRect" unique_id=78488219]
+layout_mode = 0
+offset_left = 1090.0
+offset_right = 1140.0
+offset_bottom = 1152.0
+color = Color(0.53024435, 0.5330247, 0.54063016, 1)
+
+[node name="Mapa" type="Node2D" parent="." unique_id=1495890479]
+position = Vector2(-69, -50)
+
+[node name="Ciudad" parent="Mapa" unique_id=1866163860 instance=ExtResource("3_jjvhh")]
+unique_name_in_owner = true
+position = Vector2(704, 72)
+
+[node name="Camion" type="Node2D" parent="Mapa" unique_id=644835789]
+unique_name_in_owner = true
+position = Vector2(765, 233)
+script = ExtResource("3_21xkr")
+
+[node name="Sprite2D" type="Sprite2D" parent="Mapa/Camion" unique_id=2112634621]
+texture_filter = 1
+scale = Vector2(2.3281248, 2.3281248)
+texture = ExtResource("4_kry3j")
+flip_h = true
+
+[node name="Control" type="Control" parent="." unique_id=449366584]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Control" unique_id=790932494]
+layout_mode = 0
+offset_left = 4.0
+offset_top = -19.0
+offset_right = 569.0
+offset_bottom = 62.0
+
+[node name="ID" type="Label" parent="Control/HBoxContainer" unique_id=1747541096]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ID	"
+
+[node name="Label2" type="Label" parent="Control/HBoxContainer" unique_id=1332326379]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "PESO"
+
+[node name="Label3" type="Label" parent="Control/HBoxContainer" unique_id=731359904]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "VALOR"
+
+[node name="Label4" type="Label" parent="Control/HBoxContainer" unique_id=334739369]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "TIPO"
+
+[node name="Label5" type="Label" parent="Control/HBoxContainer" unique_id=954649445]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "NODO"
+
+[node name="Label6" type="Label" parent="Control/HBoxContainer" unique_id=1587935244]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "BORRAR"
+
+[node name="Container" type="Container" parent="Control" unique_id=501905300]
+layout_mode = 0
+offset_top = 36.0
+offset_right = 580.0
+offset_bottom = 648.0
+script = ExtResource("2_kry3j")
+
+[node name="Main layout" type="VBoxContainer" parent="Control/Container" unique_id=878260338]
+layout_mode = 2
+
+[node name="Correr" type="Button" parent="Control/Container/Main layout" unique_id=166767782]
+layout_mode = 2
+text = "Correr"
+
+[node name="Ticket" type="Button" parent="Control/Container/Main layout" unique_id=1893402848]
+layout_mode = 2
+text = "IMPRIR TICKET"
+
+[node name="ADD" type="Button" parent="Control/Container/Main layout" unique_id=1685923164]
+layout_mode = 2
+text = "+"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Control/Container/Main layout" unique_id=1058334705]
+custom_minimum_size = Vector2(576, 613)
+layout_mode = 2
+size_flags_vertical = 3
+follow_focus = true
+draw_focus_border = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/Container/Main layout/ScrollContainer" unique_id=1889876439]
+layout_mode = 2
+
+[node name="TicketPopUp" type="AcceptDialog" parent="Control/Container/Main layout" unique_id=1004758906]
+dialog_text = "Detalles Tocket
+"
+
+[connection signal="pressed" from="Control/Container/Main layout/Correr" to="." method="_on_correr_pressed"]
+[connection signal="pressed" from="Control/Container/Main layout/Ticket" to="Control/Container" method="_on_ticket_pressed"]
+[connection signal="pressed" from="Control/Container/Main layout/ADD" to="Control/Container" method="_on_add_pressed"]
