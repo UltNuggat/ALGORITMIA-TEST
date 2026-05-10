@@ -15,6 +15,11 @@ func _on_correr_pressed() -> void:
 var mejor_distancia = INF
 var mejor_ruta = []
 func optimizar_ruta(ids_pedidos, matriz_distancias):
+	print("DEBUG ids_pedidos: ", ids_pedidos)
+	print("DEBUG grafo size: ", matriz_distancias.size())
+	if ids_pedidos.is_empty():
+		push_error("ids_pedidos está vacío")
+		return
 	mejor_distancia = INF
 	mejor_ruta = []
 	

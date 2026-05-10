@@ -104,7 +104,15 @@ func seleccion_pedidos(pedidos, capacidad_maxima):
 			j -= pedidos[i-1].peso
 	ids_incluidos.reverse()
 	
-	
+	var vistos= {}
+	var ids_distintos = []
+	for id in ids_incluidos:
+		if not vistos.has(id):
+			vistos[id] = true
+			ids_distintos.append(id)
+	ids_incluidos = ids_distintos
+
+
 	print("Maximo es: "+ str(tabla[n][capacidad_maxima]) + " usando los pedidos: "+ str(ids_incluidos))
 	for i in tabla:
 		print(i)
