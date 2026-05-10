@@ -1,3 +1,10 @@
+# ============================================================================
+# DEFINICIÓN DE CONEXIONES ENTRE NODOS (CONEXIONES.GD)
+# ============================================================================
+# Define las distancias desde un nodo específico hacia todos los demás nodos
+# Cada nodo en la escena tendrá un script de conexiones con sus distancias
+# ============================================================================
+
 extends Node2D
 
 
@@ -13,7 +20,10 @@ extends Node2D
 
 
 var distancias =[]
+
+# --- INICIALIZACIÓN: Construye el array de distancias en el orden correcto ---
 func _ready() -> void:
+	# Agrupa todas las distancias exportables en un array indexado
 	distancias.append(dist_0)
 	distancias.append(dist_1)
 	distancias.append(dist_2)

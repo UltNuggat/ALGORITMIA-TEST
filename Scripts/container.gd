@@ -1,109 +1,148 @@
+# ============================================================================
+# GESTOR DE CONTENEDOR Y PEDIDOS (CONTAINER.GD)
+# ============================================================================
+# Maneja la interfaz de usuario para agregar/eliminar pedidos
+# Implementa algoritmo de mochila (Knapsack) para optimizar qué pedidos cargar
+# Genera tickets con los pedidos seleccionados
+# ============================================================================
+
 extends Container
 
-# Preload the row scene we just created
+# --- REFERENCIAS VISUALES: Escenas y nodos de la interfaz ---
+# Preload de la escena de línea de pedido para instanciar dinámicamente
 const LINEA_PEDIDO = preload("uid://bj2tmp5vov1ia")
 
+# --- REFERENCIAS DE NODOS: Acceso a elementos de la UI ---
 @onready var Lista_pedido =$"Main layout/ScrollContainer/VBoxContainer"
 @onready var ticket_popup: AcceptDialog = $"Main layout/TicketPopUp"
 @onready var camion: Node2D = %Camion
 
-var ids_incluidos = []
-var ids_ticket= []
+# --- DATOS GLOBALES: Almacenan información de pedidos seleccionados ---
+var ids_incluidos = []   # IDs de nodos a visitar (resultado de mochila)
+var ids_ticket= []       # IDs de pedidos en el ticket final
 
+# --- PASO 1: AGREGAR PEDIDO A LA LISTA ---
+# Se ejecuta cuando el usuario presiona el botón "Agregar"
 func _on_add_pressed() -> void:
-	# Crea instancia de pedido
+	# Crear una nueva instancia de la fila de pedido
 	var nuevo_pedido = LINEA_PEDIDO.instantiate()
 	
-	# Añadelo a la lista
+	# Añadir la fila a la lista visual en la interfaz
 	Lista_pedido.add_child(nuevo_pedido)
 	
-	# conectar tipos y nodos posibles 
+	# --- CONFIGURAR DROPDOWNS: Llenar los selectores de tipo y nodo ---
 	var tipo_boton =  nuevo_pedido.get_node("Tipo")
 	var nodo_boton =  nuevo_pedido.get_node("Nodo")
 	
+	# Agregar todas las opciones de tipos de pedido
 	for tipo in Pedido.Tipo_pedido.keys():
 		tipo_boton.add_item(tipo)
 	
+	# Agregar todas las opciones de nodos de destino
 	for nodo in Pedido.Nodos_posibles.keys():
 		nodo_boton.add_item(nodo)
 	
-	# Ponle id
+	# Reordenar y actualizar los IDs de todos los pedidos
 	_reordenar_ids()
-	#var order_id = Lista_pedido.get_child_count()
-	#nuevo_pedido.get_node("ID").text = "Order #" + str(order_id)
 	
-	# Conecta boton de borrar
+	# Conectar el botón de eliminar para este pedido
 	var delete_btn = nuevo_pedido.get_node("DeleteButton")
 	delete_btn.pressed.connect(func(): _borra_pedido(nuevo_pedido))
 
+# --- PASO 2: ELIMINAR PEDIDO DE LA LISTA ---
+# Se ejecuta cuando el usuario presiona "Eliminar" en un pedido
 func _borra_pedido(nodo_pedido):
+	# Remover el nodo de la escena
 	Lista_pedido.remove_child(nodo_pedido)
+	# Liberar la memoria del nodo
 	nodo_pedido.queue_free()
+	# Reordenar IDs de los pedidos restantes
 	_reordenar_ids()
 
+# --- MÉTODO AUXILIAR: Actualiza los IDs de todos los pedidos (1, 2, 3...) ---
 func _reordenar_ids():
 	var hijos = Lista_pedido.get_children()
 	for i in range(hijos.size()):
 		var fila = hijos[i]
 		fila.get_node("ID").text = "Pedido #" + str(i+1)
 
-
-
+# --- PASO 3: RECOPILAR DATOS DE TODOS LOS PEDIDOS ---
+# Convierte la información de UI en objetos Pedido
 var todos_los_pedidos : Array[Pedido] = [] 
 func _actualizar_datos_de_pedido():
 	todos_los_pedidos.clear()
 	
-	
+	# Iterar sobre cada fila de pedido en la UI
 	for linea in Lista_pedido.get_children():
+		# Extraer datos de cada campo de la UI
 		var id_val = linea.get_node("ID").text.to_int()
 		var tipo_val = linea.get_node("Tipo").selected
 		var precio_val = linea.get_node("Price").value
 		var peso_val = linea.get_node("Weight").value
-		var nodo_val = linea.get_node("Nodo").selected +1 #mas uno prque el mercadona de salida tiene id de 0 como nodo
+		# Sumar 1 porque el nodo 0 es el punto de salida (no se selecciona)
+		var nodo_val = linea.get_node("Nodo").selected +1
 		
+		# Crear objeto Pedido con los datos recopilados
 		var nuevo_pedido_objeto = Pedido.new(id_val,tipo_val,peso_val,precio_val,nodo_val)
 		todos_los_pedidos.append(nuevo_pedido_objeto)
 	
+	# Debug: Imprimir cada pedido en consola
 	for item in todos_los_pedidos:
 		item.printer()
 
+# --- PASO 4: GENERAR TICKET Y APLICAR ALGORITMO DE MOCHILA ---
+# Se ejecuta cuando el usuario presiona "Generar Ticket"
 func _on_ticket_pressed() -> void:
+	# Actualizar datos de todos los pedidos desde la UI
 	_actualizar_datos_de_pedido()
 	
+	# Obtener la capacidad máxima del camión
 	var capacidad_maxima = camion.espacio_total
+	# Aplicar algoritmo de mochila para seleccionar pedidos óptimos
 	seleccion_pedidos(todos_los_pedidos, capacidad_maxima)
 	
+# --- PASO 5: ALGORITMO DE MOCHILA (KNAPSACK) ---
+# Selecciona los pedidos que maximizan el beneficio sin exceder la capacidad
 func seleccion_pedidos(pedidos, capacidad_maxima):
 	ids_incluidos.clear()
 	var n = len(pedidos)
 	
+	# --- INICIALIZAR TABLA DP: Matriz de programación dinámica ---
+	# tabla[i][j] = máximo beneficio usando primeros i pedidos con capacidad j
 	var tabla = []
 	for y in range (n + 1):
 		var fila = []
 		fila.resize(capacidad_maxima + 1)
-		fila.fill(0)
+		fila.fill(0)  # Inicializar con 0s
 		tabla.append(fila)
 	
+	# --- LLENAR LA TABLA DP: Aplicar ecuación de Knapsack ---
 	for i in range(1, n + 1):
 		var peso_actual = pedidos[i - 1].peso
 		var beneficio_actual = pedidos[i - 1].precio
 		
+		# Para cada capacidad posible
 		for j in range(capacidad_maxima + 1):
+			# Si el peso actual no cabe, ignorar este pedido
 			if peso_actual > j:
 				tabla[i][j] = tabla[i-1][j]
 			else:
+				# Tomar el máximo: incluir o no incluir este pedido
 				tabla[i][j] = max(tabla[i-1][j], beneficio_actual + tabla[i-1][j - peso_actual])
 	
+	# --- RECONSTRUIR SOLUCIÓN: Backtrack para encontrar qué pedidos se incluyeron ---
 	ids_incluidos = []
 	ids_ticket= []
 	var j = capacidad_maxima
 	for i in range(n,0,-1):
+		# Si el valor cambió, significa que se incluyó este pedido
 		if tabla[i][j] != tabla[i-1][j]:
-			ids_incluidos.append(pedidos[i-1].nodo)
-			ids_ticket.append(pedidos[i-1].id)
-			j -= pedidos[i-1].peso
-	ids_incluidos.reverse()
+			ids_incluidos.append(pedidos[i-1].nodo)  # Agregar nodo de destino
+			ids_ticket.append(pedidos[i-1].id)        # Agregar ID del pedido
+			j -= pedidos[i-1].peso                    # Restar peso de capacidad
+	ids_incluidos.reverse()  # Invertir para obtener orden correcto
 	
+	# --- REMOVER DUPLICADOS: Si hay múltiples pedidos al mismo nodo ---
 	var vistos= {}
 	var ids_distintos = []
 	for id in ids_incluidos:
@@ -112,20 +151,25 @@ func seleccion_pedidos(pedidos, capacidad_maxima):
 			ids_distintos.append(id)
 	ids_incluidos = ids_distintos
 
-
+	# Debug: Mostrar resultado del algoritmo
 	print("Maximo es: "+ str(tabla[n][capacidad_maxima]) + " usando los pedidos: "+ str(ids_incluidos))
 	for i in tabla:
 		print(i)
 	
+	# Generar y mostrar el ticket
 	print_ticket()
 
+# --- PASO 6: MOSTRAR TICKET CON PEDIDOS SELECCIONADOS ---
 func print_ticket():
+	# Verificar si hay pedidos seleccionados
 	if ids_ticket.is_empty():
 		ticket_popup.dialog_text = "No hay pedidos en la lista."
 	else:
+		# Construir texto del ticket
 		var texto_final = "RESUMEN DE PEDIDOS:\n"
 		texto_final += "----------------------------\n"
 		
+		# Agregar cada pedido seleccionado al ticket
 		for item in todos_los_pedidos:
 			for ids in ids_ticket:
 				if item.id == ids: 
@@ -133,5 +177,5 @@ func print_ticket():
 					
 		ticket_popup.dialog_text = texto_final
 	
-	# Esto hace que aparezca en el centro de la pantalla
+	# Mostrar el popup del ticket en el centro de la pantalla
 	ticket_popup.popup_centered()
