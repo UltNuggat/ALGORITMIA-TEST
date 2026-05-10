@@ -30,164 +30,145 @@ func _on_correr_pressed() -> void:
 var mejor_distancia = INF   # Distancia total de la mejor ruta
 var mejor_ruta = []         # Secuencia de nodos de la mejor ruta
 
-# --- PASO 2: OPTIMIZAR RUTA USANDO BACKTRACKING ---
-# Encuentra la ruta de distancia mínima que visita todos los pedidos
+# --- PASO 5: ALGORITMO DE RUTA MÍNIMA ENTRE NODOS OBLIGATORIOS ---
+# Calcula primero las distancias más cortas entre todos los nodos
+# Luego optimiza el orden de los pedidos usando sólo los nodos obligatorios
+# Esto evita rutas circulares inútiles y permite usar nodos intermedios correctamente
+# Parámetros:
+#  - ids_pedidos: lista de nodos obligatorios que deben visitarse
+#  - matriz_distancias: grafo con todas las distancias
 func optimizar_ruta(ids_pedidos, matriz_distancias):
-	# Debug: Mostrar datos de entrada
-	print("\n" + "============================================================")
-	print("INICIANDO OPTIMIZACIÓN DE RUTA")
-	print("============================================================")
-	print("Nodos a visitar (ids_pedidos): ", ids_pedidos)
-	print("Tamaño del grafo: ", matriz_distancias.size(), " nodos")
-	
-	# --- VALIDACIÓN: Verificar que la matriz de distancias es válida ---
-	if matriz_distancias.is_empty():
-		push_error("La matriz de distancias está vacía")
-		return
-	
 	# Validar entrada
 	if ids_pedidos.is_empty():
 		push_error("ids_pedidos está vacío")
 		return
 	
-	# --- DEBUG: Mostrar todas las distancias de la matriz ---
-	print("\nMatriz de distancias completa:")
-	for i in range(matriz_distancias.size()):
-		print("Nodo ", i, ": ", matriz_distancias[i])
-	
 	# --- VALIDACIÓN: Comprobar que existen conexiones válidas para todos los nodos ---
 	var conexiones_invalidas = []
 	for nodo in ids_pedidos:
-		print("\nValidando nodo ", nodo)
 		if nodo >= matriz_distancias.size():
-			print("  ERROR: Nodo ", nodo, " está fuera del rango (max: ", matriz_distancias.size()-1, ")")
 			conexiones_invalidas.append(nodo)
-		elif nodo < 0:
-			print("  ERROR: Nodo ", nodo, " es negativo")
+		elif matriz_distancias[nodo].size() == 0:
 			conexiones_invalidas.append(nodo)
-		else:
-			print("  OK: Nodo ", nodo, " existe en el grafo")
-			if matriz_distancias[nodo].size() == 0:
-				print("  ERROR: Nodo ", nodo, " tiene 0 distancias")
-				conexiones_invalidas.append(nodo)
-			else:
-				print("  OK: Nodo ", nodo, " tiene ", matriz_distancias[nodo].size(), " distancias")
 	
 	if not conexiones_invalidas.is_empty():
-		push_error("NODOS CON PROBLEMAS: ", conexiones_invalidas)
+		push_error("Nodos sin datos de distancia: ", conexiones_invalidas)
 		return
 	
-	print("\n✓ Validación completada - todas las conexiones son válidas\n")
+	# --- PASO 2.1: Calcular todas las distancias más cortas con Floyd-Warshall ---
+	var floyd_result = floyd_warshall(matriz_distancias)
+	var dist = floyd_result["dist"]
+	var next = floyd_result["next"]
+
+	# Verificar que todos los pedidos son alcanzables desde el nodo 0
+	for nodo in ids_pedidos:
+		if dist[0][nodo] == INF:
+			push_error("No es posible alcanzar el nodo pedido desde el inicio: ", nodo)
+			return
 	
-	# Resetear variables globales
+	# --- PASO 2.2: Resolver TSP entre nodos obligatorios usando las distancias mínimas ---
 	mejor_distancia = INF
 	mejor_ruta = []
+	backtracking_tsp(0, ids_pedidos, {0:true}, [0], 0, dist)
 	
-	# --- INICIALIZACIÓN: Comenzar desde el nodo 0 (punto de salida) ---
-	var ruta_inicial= [0]               # Ruta comienza en nodo 0
-	var visitados= {0:true}             # Marcar nodo 0 como visitado
-	
-	# --- EJECUTAR ALGORITMO: Explorar todas las rutas posibles ---
-	backtracking(0, ids_pedidos, visitados, ruta_inicial, 0, matriz_distancias)
-	
-	# Debug: Mostrar resultado
-	print("\n" + "============================================================")
 	if mejor_ruta.is_empty() or mejor_distancia == INF:
-		push_error("❌ NO SE ENCONTRÓ RUTA VÁLIDA")
-		print("Verifica que todos los nodos tengan conexiones entre sí")
-		print("Recuerda: INF significa 'no conectado' - asegúrate de configurar distancias reales")
+		push_error("NO SE ENCONTRÓ RUTA VÁLIDA. Verifica que todas las distancias estén definidas correctamente.")
 		print("Nodos solicitados: ", ids_pedidos)
-	else:
-		print("✓ Ruta encontrada: ", mejor_ruta)
-		print("✓ Distancia total: ", mejor_distancia)
-	print("============================================================" + "\n")
+		return
+	
+	# Reconstruir la ruta completa usando los caminos más cortos entre los nodos obligatorios
+	var ruta_completa = [0]
+	for i in range(mejor_ruta.size() - 1):
+		var subruta = reconstruct_path(mejor_ruta[i], mejor_ruta[i+1], next)
+		for j in range(1, subruta.size()):
+			ruta_completa.append(subruta[j])
+	
+	# Guardar la mejor ruta como la ruta completa encontrada
+	mejor_ruta = ruta_completa
+	
+	print("Ruta encontrada: ", mejor_ruta)
+	print("Distancia total: ", mejor_distancia)
 	
 	# --- PASO 3: CONVERTIR NODOS A COORDENADAS ---
-	if mejor_ruta.size() > 0:
-		var ruta_coordenadas = []
-		# Para cada nodo en la ruta, obtener sus coordenadas globales
-		for id_nodo in mejor_ruta:
-			var pos_global = ciudad.get_node_global_pos(id_nodo)
-			ruta_coordenadas.append(pos_global)
-			
-		# --- PASO 4: ENVIAR RUTA AL CAMIÓN ---
-		# Verificar que el camión tiene el método para viajar
-		if camion.has_method("viajar"):
-			camion.viajar(ruta_coordenadas)  # El camión ejecuta la ruta
-		else:
-			push_error("Camion no tiene funcion 'viajar'")
+	var ruta_coordenadas = []
+	for id_nodo in mejor_ruta:
+		var pos_global = ciudad.get_node_global_pos(id_nodo)
+		ruta_coordenadas.append(pos_global)
+	
+	if camion.has_method("viajar"):
+		camion.viajar(ruta_coordenadas)
+	else:
+		push_error("Camion no tiene funcion 'viajar'")
 
-# --- PASO 5: ALGORITMO BACKTRACKING (PROBLEMA DEL VIAJANTE CON NODOS OBLIGATORIOS) ---
-# Explora todas las rutas posibles pasando por nodos intermedios
-# Los nodos en ids_pedidos son OBLIGATORIOS (tienen pedidos que entregar)
-# Los demás nodos pueden usarse como "puentes" para conectar destinos no directamente conectados
-# Ejemplo: Para ir A→F→D, puede usar B→C como puentes si A-B-C-F-D existe
-# Parámetros:
-#  - nodo_actual: nodo donde estamos actualmente
-#  - ids_pedidos: lista de nodos OBLIGATORIOS que deben visitarse
-#  - visitados: conjunto de nodos OBLIGATORIOS ya visitados
-#  - ruta_actual: secuencia de nodos visitados hasta ahora
-#  - distancia_acumulada: suma de distancias en la ruta actual
-#  - matriz_distancias: grafo con todas las distancias
-func backtracking(nodo_actual, ids_pedidos, visitados, ruta_actual, distancia_acumulada, matriz_distancias):
-	# --- PODA 1: Si ya superamos la mejor distancia, no explorar esta rama ---
+# --- AUXILIAR: Floyd-Warshall para distancias mínimas y siguiente nodo ---
+func floyd_warshall(matriz_distancias):
+	var n = matriz_distancias.size()
+	var dist = []
+	var next = []
+	for i in range(n):
+		var fila_dist = []
+		var fila_next = []
+		for j in range(n):
+			fila_dist.append(matriz_distancias[i][j])
+			if i != j and matriz_distancias[i][j] != INF:
+				fila_next.append(j)
+			else:
+				fila_next.append(-1)
+		
+		dist.append(fila_dist)
+		next.append(fila_next)
+	
+	
+	for k in range(n):
+		for i in range(n):
+			for j in range(n):
+				if dist[i][k] + dist[k][j] < dist[i][j]:
+					dist[i][j] = dist[i][k] + dist[k][j]
+					next[i][j] = next[i][k]
+			
+		
+	return {"dist": dist, "next": next}
+
+# --- AUXILIAR: Reconstruye el camino más corto entre dos nodos ---
+func reconstruct_path(start, goal, next):
+	var path = []
+	if next[start][goal] == -1:
+		return path
+	path.append(start)
+	var current = start
+	while current != goal:
+		current = next[current][goal]
+		path.append(current)
+	
+	return path
+
+# --- AUXILIAR: Backtracking sobre nodos obligatorios usando distancias mínimas ---
+func backtracking_tsp(nodo_actual, ids_pedidos, visitados, ruta_actual, distancia_acumulada, dist):
 	if distancia_acumulada >= mejor_distancia:
 		return
 	
-	# --- CONDICIÓN DE PARADA: Se han visitado TODOS los nodos OBLIGATORIOS ---
-	# +1 porque incluye el nodo 0 de salida
 	if len(visitados) == len(ids_pedidos) + 1:
-		# Calcular distancia total cerrando la ruta (volviendo a nodo 0)
-		var distancia_retorno = matriz_distancias[nodo_actual][0]
-		
-		# La distancia de retorno debe ser válida (no infinita)
+		var distancia_retorno = dist[nodo_actual][0]
 		if distancia_retorno == INF:
-			return  # No hay forma de volver al inicio, ruta inválida
-		
+			return
 		var distancia_total = distancia_acumulada + distancia_retorno
-		# Si es mejor que la actual, guardarla
 		if distancia_total < mejor_distancia:
 			mejor_distancia = distancia_total
 			mejor_ruta = ruta_actual.duplicate()
-			mejor_ruta.append(0)  # Agregar retorno al nodo 0
+			mejor_ruta.append(0)
+		
 		return
 	
-	# --- EXPLORACIÓN: Intentar ir a CUALQUIER nodo del grafo ---
-	# No solo a los nodos obligatorios, sino a TODOS los nodos como posibles "puentes"
-	for siguiente_nodo in range(matriz_distancias.size()):
-		# Si este nodo aún no ha sido visitado EN LA RUTA ACTUAL
-		if not ruta_actual.has(siguiente_nodo):
-			# Obtener la distancia hacia el siguiente nodo
-			var distancia_siguiente = matriz_distancias[nodo_actual][siguiente_nodo]
-			
-			# --- VALIDACIÓN: Saltar si no hay conexión directa ---
+	
+	for siguiente_nodo in ids_pedidos:
+		if not visitados.has(siguiente_nodo):
+			var distancia_siguiente = dist[nodo_actual][siguiente_nodo]
 			if distancia_siguiente == INF:
-				# Este camino no es posible, intentar con otro nodo
 				continue
-			
-			# Agregar a la ruta actual
+			visitados[siguiente_nodo] = true
 			ruta_actual.append(siguiente_nodo)
-			
-			# --- MARCAR COMO VISITADO solo si es un nodo OBLIGATORIO ---
-			var era_obligatorio = false
-			if ids_pedidos.has(siguiente_nodo):
-				visitados[siguiente_nodo] = true
-				era_obligatorio = true
-				print("  → Visitando nodo OBLIGATORIO ", siguiente_nodo, " (tiene pedido)")
-			else:
-				print("  → Usando nodo PUENTE ", siguiente_nodo, " (para llegar a destino)")
-			
-			# Recursión: Explorar desde este nuevo nodo
-			backtracking(
-				siguiente_nodo,  # Nuevo nodo actual
-				ids_pedidos, 
-				visitados, 
-				ruta_actual, 
-				distancia_acumulada + distancia_siguiente,  # Acumular distancia
-				matriz_distancias
-			)
-			
-			# Backtrack: Deshacer cambios
+			backtracking_tsp(siguiente_nodo, ids_pedidos, visitados, ruta_actual, distancia_acumulada + distancia_siguiente, dist)
 			ruta_actual.pop_back()
-			if era_obligatorio:
-				visitados.erase(siguiente_nodo)
+			visitados.erase(siguiente_nodo)
+		
+	

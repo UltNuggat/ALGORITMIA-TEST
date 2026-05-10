@@ -15,7 +15,7 @@ extends Node2D
 func _draw() -> void:
 	# Obtener fuente por defecto del tema
 	var default_font = ThemeDB.fallback_font
-	var defoult_font_size = ThemeDB.fallback_font_size
+	var default_font_size = ThemeDB.fallback_font_size
 	
 	# Iterar sobre cada nodo hijo y dibujarlo
 	for nodo in nodos.get_children():
