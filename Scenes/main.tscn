@@ -147,6 +147,14 @@ layout_mode = 2
 dialog_text = "Detalles Tocket
 "
 
+[node name="Label" type="Label" parent="Control" unique_id=1190785211]
+layout_mode = 0
+offset_left = 759.0
+offset_top = 17.0
+offset_right = 973.0
+offset_bottom = 40.0
+text = "PESO MAX DEL CAMION:  10"
+
 [connection signal="pressed" from="Control/Container/Main layout/Correr" to="." method="_on_correr_pressed"]
 [connection signal="pressed" from="Control/Container/Main layout/Ticket" to="Control/Container" method="_on_ticket_pressed"]
 [connection signal="pressed" from="Control/Container/Main layout/ADD" to="Control/Container" method="_on_add_pressed"]

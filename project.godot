@@ -18,3 +18,7 @@ config/name="algoritmia test"
 run/main_scene="uid://clqokuq8v4b4x"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
+
+[rendering]
+
+textures/vram_compression/import_s3tc_bptc=true
